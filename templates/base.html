@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}LiverAI — Liver Disease Prediction System{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg-base      : #060d1a;
+      --bg-surface   : #0d1b2e;
+      --bg-card      : #112240;
+      --bg-elevated  : #172a4a;
+      --border       : #1e3a5f;
+      --border-light : #2a4d72;
+      --accent       : #00d4ff;
+      --accent-dim   : #0099bb;
+      --accent-glow  : rgba(0,212,255,0.15);
+      --green        : #00e676;
+      --green-dim    : #00a152;
+      --red          : #ff5252;
+      --red-dim      : #c62828;
+      --amber        : #ffab40;
+      --text-primary : #e8f4fd;
+      --text-secondary:#8ab4d4;
+      --text-muted   : #4a7090;
+      --font-main    : 'Space Grotesk', sans-serif;
+      --font-mono    : 'JetBrains Mono', monospace;
+      --radius       : 12px;
+      --radius-sm    : 8px;
+      --shadow       : 0 4px 24px rgba(0,0,0,0.4);
+      --shadow-glow  : 0 0 30px rgba(0,212,255,0.1);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font-main);
+      background : var(--bg-base);
+      color      : var(--text-primary);
+      min-height : 100vh;
+      display    : flex;
+      flex-direction: column;
+    }
+
+    /* ── Navbar ── */
+    .navbar {
+      background  : rgba(13,27,46,0.95);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      position    : sticky;
+      top         : 0;
+      z-index     : 1000;
+      padding     : 0 2rem;
+      height      : 64px;
+      display     : flex;
+      align-items : center;
+      justify-content: space-between;
+    }
+    .navbar-brand {
+      display    : flex;
+      align-items: center;
+      gap        : 10px;
+      text-decoration: none;
+      color      : var(--text-primary);
+    }
+    .brand-icon {
+      width       : 36px;
+      height      : 36px;
+      background  : linear-gradient(135deg, var(--accent), #0066ff);
+      border-radius: 8px;
+      display     : flex;
+      align-items : center;
+      justify-content: center;
+      font-size   : 16px;
+    }
+    .brand-name {
+      font-size  : 1.2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .brand-name span { color: var(--accent); }
+    .nav-links {
+      display  : flex;
+      gap      : 4px;
+      list-style: none;
+    }
+    .nav-links a {
+      display       : flex;
+      align-items   : center;
+      gap           : 6px;
+      padding       : 6px 14px;
+      border-radius : var(--radius-sm);
+      text-decoration: none;
+      color         : var(--text-secondary);
+      font-size     : 0.875rem;
+      font-weight   : 500;
+      transition    : all 0.2s;
+    }
+    .nav-links a:hover,
+    .nav-links a.active {
+      color      : var(--text-primary);
+      background : var(--bg-elevated);
+    }
+    .nav-links a.active { color: var(--accent); }
+    .nav-cta {
+      background : linear-gradient(135deg, var(--accent), #0066ff) !important;
+      color      : #fff !important;
+      font-weight: 600 !important;
+    }
+    .nav-cta:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    /* ── Main layout ── */
+    .main-content { flex: 1; padding: 2rem; max-width: 1400px; margin: 0 auto; width: 100%; }
+
+    /* ── Cards ── */
+    .card {
+      background   : var(--bg-card);
+      border       : 1px solid var(--border);
+      border-radius: var(--radius);
+      padding      : 1.5rem;
+      box-shadow   : var(--shadow);
+    }
+    .card-title {
+      font-size  : 1rem;
+      font-weight: 600;
+      color      : var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 1rem;
+    }
+
+    /* ── Stat card ── */
+    .stat-card {
+      background   : var(--bg-card);
+      border       : 1px solid var(--border);
+      border-radius: var(--radius);
+      padding      : 1.25rem 1.5rem;
+      display      : flex;
+      align-items  : center;
+      gap          : 1rem;
+    }
+    .stat-icon {
+      width         : 48px;
+      height        : 48px;
+      border-radius : 10px;
+      display       : flex;
+      align-items   : center;
+      justify-content: center;
+      font-size     : 1.3rem;
+      flex-shrink   : 0;
+    }
+    .stat-icon.blue   { background: rgba(0,212,255,0.12); color: var(--accent); }
+    .stat-icon.red    { background: rgba(255,82,82,0.12);  color: var(--red); }
+    .stat-icon.green  { background: rgba(0,230,118,0.12);  color: var(--green); }
+    .stat-icon.amber  { background: rgba(255,171,64,0.12); color: var(--amber); }
+    .stat-value {
+      font-size  : 1.8rem;
+      font-weight: 700;
+      line-height: 1;
+      font-family: var(--font-mono);
+    }
+    .stat-label { font-size: 0.8rem; color: var(--text-muted); margin-top: 3px; }
+
+    /* ── Buttons ── */
+    .btn {
+      display      : inline-flex;
+      align-items  : center;
+      gap          : 6px;
+      padding      : 10px 20px;
+      border-radius: var(--radius-sm);
+      border       : none;
+      font-family  : var(--font-main);
+      font-size    : 0.875rem;
+      font-weight  : 600;
+      cursor       : pointer;
+      transition   : all 0.2s;
+      text-decoration: none;
+    }
+    .btn-primary   { background: linear-gradient(135deg,var(--accent),#0066ff); color:#fff; }
+    .btn-primary:hover { opacity:0.9; transform:translateY(-1px); box-shadow: 0 4px 16px rgba(0,212,255,0.3); }
+    .btn-success   { background: var(--green-dim); color:#fff; }
+    .btn-danger    { background: var(--red-dim);   color:#fff; }
+    .btn-outline   { background: transparent; border:1px solid var(--border-light); color:var(--text-secondary); }
+    .btn-outline:hover { border-color:var(--accent); color:var(--accent); }
+    .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+
+    /* ── Badges ── */
+    .badge {
+      display      : inline-flex;
+      align-items  : center;
+      padding      : 3px 10px;
+      border-radius: 20px;
+      font-size    : 0.75rem;
+      font-weight  : 600;
+      font-family  : var(--font-mono);
+    }
+    .badge-red    { background:rgba(255,82,82,0.15);  color:var(--red);   border:1px solid rgba(255,82,82,0.3); }
+    .badge-green  { background:rgba(0,230,118,0.15);  color:var(--green); border:1px solid rgba(0,230,118,0.3); }
+    .badge-amber  { background:rgba(255,171,64,0.15); color:var(--amber); border:1px solid rgba(255,171,64,0.3); }
+    .badge-blue   { background:rgba(0,212,255,0.15);  color:var(--accent);border:1px solid rgba(0,212,255,0.3); }
+
+    /* ── Forms ── */
+    .form-group { margin-bottom: 1.25rem; }
+    .form-label {
+      display    : block;
+      font-size  : 0.8rem;
+      font-weight: 600;
+      color      : var(--text-secondary);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .form-control, .form-select {
+      width        : 100%;
+      background   : var(--bg-surface);
+      border       : 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color        : var(--text-primary);
+      padding      : 10px 14px;
+      font-family  : var(--font-main);
+      font-size    : 0.9rem;
+      transition   : border-color 0.2s;
+      outline      : none;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: var(--accent);
+      box-shadow  : 0 0 0 3px var(--accent-glow);
+    }
+    .form-hint { font-size:0.75rem; color:var(--text-muted); margin-top:4px; }
+
+    /* ── Alerts ── */
+    .alert {
+      padding      : 12px 16px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 1rem;
+      font-size    : 0.875rem;
+      display      : flex;
+      align-items  : center;
+      gap          : 8px;
+    }
+    .alert-error   { background:rgba(255,82,82,0.1);  border:1px solid rgba(255,82,82,0.3);  color:var(--red); }
+    .alert-success { background:rgba(0,230,118,0.1);  border:1px solid rgba(0,230,118,0.3);  color:var(--green); }
+
+    /* ── Table ── */
+    .table-wrap { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; font-size:0.875rem; }
+    th {
+      background  : var(--bg-surface);
+      color       : var(--text-muted);
+      font-size   : 0.75rem;
+      font-weight : 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding     : 10px 14px;
+      text-align  : left;
+      border-bottom: 1px solid var(--border);
+    }
+    td { padding:12px 14px; border-bottom:1px solid var(--border); color:var(--text-primary); }
+    tr:hover td { background: var(--bg-elevated); }
+
+    /* ── Section header ── */
+    .page-header {
+      display      : flex;
+      align-items  : center;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .page-title { font-size:1.6rem; font-weight:700; letter-spacing:-0.02em; }
+    .page-title span { color:var(--accent); }
+    .page-subtitle { font-size:0.875rem; color:var(--text-muted); margin-top:4px; }
+
+    /* ── Grid helpers ── */
+    .grid { display:grid; gap:1.25rem; }
+    .grid-2 { grid-template-columns:repeat(2,1fr); }
+    .grid-3 { grid-template-columns:repeat(3,1fr); }
+    .grid-4 { grid-template-columns:repeat(4,1fr); }
+    .grid-12 { grid-template-columns:repeat(12,1fr); }
+
+    /* ── Footer ── */
+    footer {
+      background  : var(--bg-surface);
+      border-top  : 1px solid var(--border);
+      text-align  : center;
+      padding     : 1.25rem;
+      font-size   : 0.8rem;
+      color       : var(--text-muted);
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width:6px; height:6px; }
+    ::-webkit-scrollbar-track { background:var(--bg-base); }
+    ::-webkit-scrollbar-thumb { background:var(--border-light); border-radius:3px; }
+
+    /* ── Animations ── */
+    .fade-in { animation: fadeIn 0.4s ease; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+    @media(max-width:768px) {
+      .nav-links { display:none; }
+      .grid-2,.grid-3,.grid-4 { grid-template-columns:1fr; }
+      .main-content { padding:1rem; }
+    }
+  </style>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="{{ url_for('main.index') }}">
+    <div class="brand-icon"><i class="fas fa-heartbeat"></i></div>
+    <span class="brand-name">Liver<span>AI</span></span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="{{ url_for('main.index') }}"      class="{{ 'active' if request.endpoint == 'main.index' }}">
+      <i class="fas fa-house"></i> Home</a></li>
+    <li><a href="{{ url_for('dashboard.index') }}" class="{{ 'active' if request.blueprint == 'dashboard' }}">
+      <i class="fas fa-chart-line"></i> Dashboard</a></li>
+    <li><a href="{{ url_for('history.index') }}"   class="{{ 'active' if request.blueprint == 'history' }}">
+      <i class="fas fa-clock-rotate-left"></i> History</a></li>
+    <li><a href="{{ url_for('about.index') }}"     class="{{ 'active' if request.blueprint == 'about' }}">
+      <i class="fas fa-circle-info"></i> About</a></li>
+    <li><a href="{{ url_for('predict.form') }}"    class="nav-cta">
+      <i class="fas fa-flask"></i> New Prediction</a></li>
+  </ul>
+</nav>
+
+<main class="main-content fade-in">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+      <div class="alert alert-{{ 'error' if cat == 'error' else 'success' }}">
+        <i class="fas fa-{{ 'circle-xmark' if cat == 'error' else 'circle-check' }}"></i> {{ msg }}
+      </div>
+    {% endfor %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+</main>
+
+<footer>
+  <p>LiverAI &mdash; Explainable Ensemble ML System for Liver Disease Prediction &nbsp;|&nbsp;
+     Built with Flask &middot; SHAP &middot; scikit-learn &middot; XGBoost</p>
+</footer>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

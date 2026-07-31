@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% block title %}LiverAI — Patient History{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Patient <span>History</span></div>
+    <div class="page-subtitle">Search, filter and review all prediction records</div>
+  </div>
+  <div style="display:flex; gap:0.75rem;">
+    <a href="{{ url_for('history.export') }}" class="btn btn-outline btn-sm">
+      <i class="fas fa-download"></i> Export CSV
+    </a>
+    <a href="{{ url_for('predict.form') }}" class="btn btn-primary btn-sm">
+      <i class="fas fa-plus"></i> New Prediction
+    </a>
+  </div>
+</div>
+
+<!-- ── Search & Filter Bar ───────────────────────────────────── -->
+<div class="card" style="margin-bottom:1.25rem;">
+  <form method="GET" action="{{ url_for('history.index') }}">
+    <div style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:flex-end;">
+
+      <div style="flex:2; min-width:200px;">
+        <label class="form-label"><i class="fas fa-magnifying-glass"></i> Search</label>
+        <input type="text" name="search" class="form-control"
+               placeholder="Patient name or ID..." value="{{ search }}"/>
+      </div>
+
+      <div style="flex:1; min-width:140px;">
+        <label class="form-label">Prediction</label>
+        <select name="prediction" class="form-select">
+          <option value="">All</option>
+          <option value="Liver Disease"    {{ 'selected' if pred_filter == 'Liver Disease' }}>Liver Disease</option>
+          <option value="No Liver Disease" {{ 'selected' if pred_filter == 'No Liver Disease' }}>No Liver Disease</option>
+        </select>
+      </div>
+
+      <div style="flex:1; min-width:120px;">
+        <label class="form-label">Risk Level</label>
+        <select name="risk" class="form-select">
+          <option value="">All</option>
+          <option value="High"   {{ 'selected' if risk_filter == 'High' }}>High</option>
+          <option value="Medium" {{ 'selected' if risk_filter == 'Medium' }}>Medium</option>
+          <option value="Low"    {{ 'selected' if risk_filter == 'Low' }}>Low</option>
+        </select>
+      </div>
+
+      <div style="flex:1; min-width:120px;">
+        <label class="form-label">Gender</label>
+        <select name="gender" class="form-select">
+          <option value="">All</option>
+          <option value="Male"   {{ 'selected' if gender_f == 'Male' }}>Male</option>
+          <option value="Female" {{ 'selected' if gender_f == 'Female' }}>Female</option>
+        </select>
+      </div>
+
+      <div style="display:flex; gap:0.5rem;">
+        <button type="submit" class="btn btn-primary btn-sm" style="align-self:flex-end;">
+          <i class="fas fa-filter"></i> Filter
+        </button>
+        <a href="{{ url_for('history.index') }}" class="btn btn-outline btn-sm" style="align-self:flex-end;">
+          <i class="fas fa-xmark"></i> Clear
+        </a>
+      </div>
+
+    </div>
+  </form>
+</div>
+
+<!-- ── Records count ────────────────────────────────────────── -->
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+  <div style="font-size:0.85rem; color:var(--text-muted);">
+    Showing <strong style="color:var(--text-primary);">{{ pagination.items | length }}</strong>
+    of <strong style="color:var(--text-primary);">{{ pagination.total }}</strong> records
+    {% if search or pred_filter or risk_filter or gender_f %}
+    <span style="color:var(--accent);">(filtered)</span>
+    {% endif %}
+  </div>
+  <div style="font-size:0.8rem; color:var(--text-muted);">
+    Page {{ pagination.page }} of {{ pagination.pages }}
+  </div>
+</div>
+
+<!-- ── Records Table ─────────────────────────────────────────── -->
+<div class="card" style="margin-bottom:1.25rem;">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Patient</th>
+          <th>Age</th>
+          <th>Gender</th>
+          <th>Key Labs</th>
+          <th>Prediction</th>
+          <th>Confidence</th>
+          <th>Confidence</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in records %}
+        <tr>
+          <td><span style="font-family:var(--font-mono); color:var(--text-muted); font-size:0.8rem;">#{{ r.id }}</span></td>
+
+          <td>
+            <div style="font-weight:600; font-size:0.875rem;">{{ r.patient_name or 'Anonymous' }}</div>
+            <div style="font-size:0.72rem; color:var(--text-muted);">{{ r.patient_id or '—' }}</div>
+          </td>
+
+          <td style="font-family:var(--font-mono);">{{ r.age }}</td>
+          <td>{{ r.gender }}</td>
+
+          <td style="font-size:0.75rem; color:var(--text-muted); font-family:var(--font-mono);">
+            TB: {{ r.total_bilirubin }}<br>
+            ALT: {{ r.alamine_aminotransferase }} | AST: {{ r.aspartate_aminotransferase }}
+          </td>
+
+          <td>
+            <span class="badge {{ 'badge-red' if r.prediction == 'Liver Disease' else 'badge-green' }}">
+              {{ 'Disease' if r.prediction == 'Liver Disease' else 'No Disease' }}
+            </span>
+          </td>
+
+          <td>
+            <span class="badge
+              {% if r.confidence == 'High' %}badge-green
+              {% elif r.confidence == 'Moderate' %}badge-amber
+              {% else %}badge-red{% endif %}">
+              {{ r.confidence }}
+            </span>
+          </td>
+
+          <td style="font-size:0.78rem; color:var(--text-muted); white-space:nowrap;">
+            {{ r.timestamp.strftime('%b %d, %Y') }}<br>
+            <span style="font-family:var(--font-mono);">{{ r.timestamp.strftime('%H:%M') }}</span>
+          </td>
+
+          <td>
+            <div style="display:flex; gap:4px;">
+              <a href="{{ url_for('history.view', prediction_id=r.id) }}"
+                 class="btn btn-outline btn-sm" title="View details">
+                <i class="fas fa-eye"></i>
+              </a>
+              <form method="POST" action="{{ url_for('history.delete', prediction_id=r.id) }}"
+                    onsubmit="return confirm('Delete record #{{ r.id }}?');"
+                    style="display:inline;">
+                <button type="submit" class="btn btn-sm"
+                        style="background:rgba(255,82,82,0.1); color:var(--red);
+                               border:1px solid rgba(255,82,82,0.3);" title="Delete">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="11" style="text-align:center; padding:3rem; color:var(--text-muted);">
+            <i class="fas fa-magnifying-glass" style="font-size:2rem; opacity:0.3; display:block; margin-bottom:0.75rem;"></i>
+            No records found
+            {% if search or pred_filter or risk_filter or gender_f %}
+            matching your filters. <a href="{{ url_for('history.index') }}" style="color:var(--accent);">Clear filters</a>
+            {% else %}
+            . <a href="{{ url_for('predict.form') }}" style="color:var(--accent);">Run the first prediction</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── Pagination ────────────────────────────────────────────── -->
+{% if pagination.pages > 1 %}
+<div style="display:flex; justify-content:center; gap:0.4rem; flex-wrap:wrap;">
+
+  {% if pagination.has_prev %}
+  <a href="{{ url_for('history.index', page=pagination.prev_num, search=search,
+             prediction=pred_filter, risk=risk_filter, gender=gender_f) }}"
+     class="btn btn-outline btn-sm"><i class="fas fa-chevron-left"></i></a>
+  {% endif %}
+
+  {% for p in pagination.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
+    {% if p %}
+      <a href="{{ url_for('history.index', page=p, search=search,
+                 prediction=pred_filter, risk=risk_filter, gender=gender_f) }}"
+         class="btn btn-sm {{ 'btn-primary' if p == pagination.page else 'btn-outline' }}">
+        {{ p }}
+      </a>
+    {% else %}
+      <span style="padding:6px 4px; color:var(--text-muted);">…</span>
+    {% endif %}
+  {% endfor %}
+
+  {% if pagination.has_next %}
+  <a href="{{ url_for('history.index', page=pagination.next_num, search=search,
+             prediction=pred_filter, risk=risk_filter, gender=gender_f) }}"
+     class="btn btn-outline btn-sm"><i class="fas fa-chevron-right"></i></a>
+  {% endif %}
+
+</div>
+{% endif %}
+{% endblock %}

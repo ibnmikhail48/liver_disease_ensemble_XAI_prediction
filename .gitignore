@@ -1,0 +1,46 @@
+# ── Python ────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+.Python
+
+# ── Virtual environments ───────────────────────────────────────
+venv/
+env/
+.venv/
+.env/
+
+# ── Flask / instance ───────────────────────────────────────────
+instance/
+*.db
+*.sqlite3
+
+# ── Environment variables ──────────────────────────────────────
+.env
+.env.*
+
+# ── Generated SHAP plots (runtime artefacts) ──────────────────
+static/img/shap_plots/
+
+# ── ML model artefacts (large files — store separately) ────────
+liver_disease_models/*.pkl
+liver_disease_xai/*.pkl
+liver_disease_xai/*.npy
+
+# ── Jupyter ────────────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb
+
+# ── OS ────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── IDEs ───────────────────────────────────────────────────────
+.vscode/settings.json
+.idea/
+
+# ── Logs ──────────────────────────────────────────────────────
+*.log
+logs/

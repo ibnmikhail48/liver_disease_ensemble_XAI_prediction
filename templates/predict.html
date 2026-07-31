@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}LiverAI — New Prediction{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title"><span>New</span> Prediction</div>
+    <div class="page-subtitle">Enter patient lab values to run the ensemble model</div>
+  </div>
+  <a href="{{ url_for('history.index') }}" class="btn btn-outline">
+    <i class="fas fa-clock-rotate-left"></i> View History
+  </a>
+</div>
+
+<form method="POST" action="{{ url_for('predict.run') }}" id="predictForm">
+
+  <!-- ── Patient Information ───────────────────────────────── -->
+  <div class="card" style="margin-bottom:1.25rem;">
+    <div class="card-title"><i class="fas fa-user-injured"></i> Patient Information
+      <span style="color:var(--text-muted); font-size:0.75rem; font-weight:400; text-transform:none; letter-spacing:0;">&nbsp;(optional)</span>
+    </div>
+    <div class="grid grid-3">
+      <div class="form-group">
+        <label class="form-label">Patient Name</label>
+        <input type="text" name="patient_name" class="form-control" placeholder="e.g. John Doe"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Patient ID / Record No.</label>
+        <input type="text" name="patient_id" class="form-control" placeholder="e.g. PT-00123"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <input type="text" name="notes" class="form-control" placeholder="Optional clinical notes"/>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Demographics ─────────────────────────────────────── -->
+  <div class="card" style="margin-bottom:1.25rem;">
+    <div class="card-title"><i class="fas fa-id-card"></i> Demographics</div>
+    <div class="grid grid-2">
+      <div class="form-group">
+        <label class="form-label">Age <span style="color:var(--red);">*</span></label>
+        <input type="number" name="age" class="form-control" placeholder="e.g. 45" min="1" max="120" required/>
+        <div class="form-hint">Patient age in years (1 – 120)</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Gender <span style="color:var(--red);">*</span></label>
+        <select name="gender" class="form-select" required>
+          <option value="" disabled selected>Select gender</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Bilirubin ─────────────────────────────────────────── -->
+  <div class="card" style="margin-bottom:1.25rem;">
+    <div class="card-title"><i class="fas fa-droplet"></i> Bilirubin Levels</div>
+    <div class="grid grid-2">
+      <div class="form-group">
+        <label class="form-label">Total Bilirubin (mg/dL) <span style="color:var(--red);">*</span></label>
+        <input type="number" name="total_bilirubin" class="form-control" placeholder="e.g. 1.2"
+               step="0.1" min="0.1" max="100" required/>
+        <div class="form-hint">Normal: 0.1 – 1.2 mg/dL</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Direct Bilirubin (mg/dL) <span style="color:var(--red);">*</span></label>
+        <input type="number" name="direct_bilirubin" class="form-control" placeholder="e.g. 0.4"
+               step="0.1" min="0" max="50" required/>
+        <div class="form-hint">Normal: 0.0 – 0.3 mg/dL</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Liver Enzymes ─────────────────────────────────────── -->
+  <div class="card" style="margin-bottom:1.25rem;">
+    <div class="card-title"><i class="fas fa-vial"></i> Liver Enzymes</div>
+    <div class="grid grid-3">
+      <div class="form-group">
+        <label class="form-label">Alkaline Phosphotase (IU/L) <span style="color:var(--red);">*</span></label>
+        <input type="number" name="alkaline_phosphotase" class="form-control" placeholder="e.g. 187"
+               min="1" max="2000" required/>
+        <div class="form-hint">Normal: 44 – 147 IU/L</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">ALT — Alamine Aminotransferase (IU/L) <span style="color:var(--red);">*</span></label>
+        <input type="number" name="alamine_aminotransferase" class="form-control" placeholder="e.g. 16"
+               min="1" max="2000" required/>
+        <div class="form-hint">Normal: 7 – 56 IU/L</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">AST — Aspartate Aminotransferase (IU/L) <span style="color:var(--red);">*</span></label>
+        <input type="number" name="aspartate_aminotransferase" class="form-control" placeholder="e.g. 18"
+               min="1" max="2000" required/>
+        <div class="form-hint">Normal: 10 – 40 IU/L</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Proteins & Albumin ────────────────────────────────── -->
+  <div class="card" style="margin-bottom:1.5rem;">
+    <div class="card-title"><i class="fas fa-flask-vial"></i> Proteins & Albumin</div>
+    <div class="grid grid-3">
+      <div class="form-group">
+        <label class="form-label">Total Proteins (g/dL) <span style="color:var(--red);">*</span></label>
+        <input type="number" name="total_protiens" class="form-control" placeholder="e.g. 6.8"
+               step="0.1" min="0.1" max="12" required/>
+        <div class="form-hint">Normal: 6.0 – 8.3 g/dL</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Albumin (g/dL) <span style="color:var(--red);">*</span></label>
+        <input type="number" name="albumin" class="form-control" placeholder="e.g. 3.3"
+               step="0.1" min="0.1" max="6" required/>
+        <div class="form-hint">Normal: 3.5 – 5.0 g/dL</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Albumin/Globulin Ratio <span style="color:var(--red);">*</span></label>
+        <input type="number" name="albumin_globulin_ratio" class="form-control" placeholder="e.g. 0.9"
+               step="0.01" min="0.1" max="5" required/>
+        <div class="form-hint">Normal: 1.0 – 2.5</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Submit ────────────────────────────────────────────── -->
+  <div style="display:flex; gap:1rem; align-items:center;">
+    <button type="submit" class="btn btn-primary" style="padding:13px 32px; font-size:1rem;" id="submitBtn">
+      <i class="fas fa-brain"></i> Run Prediction
+    </button>
+    <button type="reset" class="btn btn-outline">
+      <i class="fas fa-rotate-left"></i> Reset
+    </button>
+    <div id="loading" style="display:none; color:var(--text-muted); font-size:0.875rem;">
+      <i class="fas fa-spinner fa-spin"></i> Running ensemble model + SHAP analysis...
+    </div>
+  </div>
+
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('predictForm').addEventListener('submit', function() {
+  document.getElementById('submitBtn').disabled = true;
+  document.getElementById('submitBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Running...';
+  document.getElementById('loading').style.display = 'inline-flex';
+});
+</script>
+{% endblock %}

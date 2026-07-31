@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+{% block title %}LiverAI — Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title"><span>Analytics</span> Dashboard</div>
+    <div class="page-subtitle">System-wide statistics and prediction trends</div>
+  </div>
+  <div style="display:flex; gap:0.75rem;">
+    <button onclick="refreshStats()" class="btn btn-outline btn-sm">
+      <i class="fas fa-rotate"></i> Refresh
+    </button>
+    <a href="{{ url_for('history.export') }}" class="btn btn-outline btn-sm">
+      <i class="fas fa-download"></i> Export CSV
+    </a>
+  </div>
+</div>
+
+<!-- ── Summary Cards ─────────────────────────────────────────── -->
+<div class="grid grid-4" style="margin-bottom:1.5rem;">
+  <div class="stat-card">
+    <div class="stat-icon blue"><i class="fas fa-database"></i></div>
+    <div>
+      <div class="stat-value" id="s-total">{{ stats.total }}</div>
+      <div class="stat-label">Total Predictions</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon red"><i class="fas fa-virus"></i></div>
+    <div>
+      <div class="stat-value" id="s-disease" style="color:var(--red);">{{ stats.disease }}</div>
+      <div class="stat-label">Liver Disease</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green"><i class="fas fa-shield-halved"></i></div>
+    <div>
+      <div class="stat-value" id="s-nodisease" style="color:var(--green);">{{ stats.no_disease }}</div>
+      <div class="stat-label">No Disease</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon amber"><i class="fas fa-bullseye"></i></div>
+    <div>
+      <div class="stat-value" id="s-highconf" style="color:var(--amber);">{{ stats.high_conf }}</div>
+      <div class="stat-label">High Confidence</div>
+    </div>
+  </div>
+</div>
+
+<div class="grid" style="grid-template-columns:2fr 1fr; gap:1.25rem; margin-bottom:1.25rem;">
+
+  <!-- Daily trend chart -->
+  <div class="card">
+    <div class="card-title"><i class="fas fa-chart-line"></i> 14-Day Prediction Trend</div>
+    <canvas id="trendChart" height="100"></canvas>
+  </div>
+
+  <!-- Disease breakdown -->
+  <div class="card">
+    <div class="card-title"><i class="fas fa-chart-pie"></i> Disease Breakdown</div>
+    <canvas id="breakdownChart" height="200"></canvas>
+    <div style="display:flex; justify-content:center; gap:1.5rem; margin-top:1rem;">
+      <div style="text-align:center;">
+        <div style="font-size:1.3rem; font-weight:700; color:var(--red); font-family:var(--font-mono);">
+          {{ stats.disease_rate }}%
+        </div>
+        <div style="font-size:0.75rem; color:var(--text-muted);">Disease Rate</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:1.3rem; font-weight:700; color:var(--amber); font-family:var(--font-mono);">
+          {{ stats.last_7_days }}
+        </div>
+        <div style="font-size:0.75rem; color:var(--text-muted);">Last 7 Days</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-3" style="gap:1.25rem; margin-bottom:1.25rem;">
+
+  <!-- Gender distribution -->
+  <div class="card">
+    <div class="card-title"><i class="fas fa-venus-mars"></i> Gender Distribution</div>
+    <canvas id="genderChart" height="180"></canvas>
+  </div>
+
+  <!-- Result colour distribution -->
+  <div class="card">
+    <div class="card-title"><i class="fas fa-palette"></i> Result Colour Distribution</div>
+    <canvas id="colorChart" height="180"></canvas>
+  </div>
+
+  <!-- Confidence distribution -->
+  <div class="card">
+    <div class="card-title"><i class="fas fa-bullseye"></i> Confidence Distribution</div>
+    <canvas id="confChart" height="180"></canvas>
+  </div>
+</div>
+
+<div class="grid grid-2" style="gap:1.25rem; margin-bottom:1.5rem;">
+
+  <!-- Age group -->
+  <div class="card">
+    <div class="card-title"><i class="fas fa-users"></i> Age Group Distribution</div>
+    <canvas id="ageChart" height="130"></canvas>
+  </div>
+
+
+</div>
+
+<!-- ── Recent predictions table ─────────────────────────────── -->
+<div class="card">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+    <div class="card-title" style="margin:0;"><i class="fas fa-table"></i> Recent 10 Predictions</div>
+    <a href="{{ url_for('history.index') }}" class="btn btn-outline btn-sm">View All</a>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th>Patient</th><th>Age</th><th>Gender</th>
+          <th>Prediction</th><th>Confidence</th><th>Date</th><th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in recent %}
+        <tr>
+          <td><span style="font-family:var(--font-mono); color:var(--text-muted);">#{{ r.id }}</span></td>
+          <td><strong>{{ r.patient_name or 'Anonymous' }}</strong><br>
+            <span style="font-size:0.72rem; color:var(--text-muted);">{{ r.patient_id or '—' }}</span></td>
+          <td style="font-family:var(--font-mono);">{{ r.age }}</td>
+          <td>{{ r.gender }}</td>
+          <td>
+            <span class="badge {{ 'badge-red' if r.prediction == 'Liver Disease' else 'badge-green' }}">
+              {{ r.prediction }}
+            </span>
+          </td>
+          <td>
+            <span class="badge {{ 'badge-green' if r.confidence=='High' else ('badge-amber' if r.confidence=='Moderate' else 'badge-red') }}">
+              {{ r.confidence }}
+            </span>
+          </td>
+          <td style="color:var(--text-muted); font-size:0.8rem;">{{ r.timestamp.strftime('%b %d, %H:%M') }}</td>
+          <td>
+            <a href="{{ url_for('history.view', prediction_id=r.id) }}" class="btn btn-outline btn-sm">
+              <i class="fas fa-eye"></i>
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="9" style="text-align:center; color:var(--text-muted); padding:2rem;">
+          No predictions yet. <a href="{{ url_for('predict.form') }}" style="color:var(--accent);">Run the first one →</a>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const TREND    = {{ daily_trend | safe }};
+const GENDER   = {{ gender_data | safe }};
+const COLOR    = {{ color_data | safe }};
+const CONF     = {{ conf_data | safe }};
+const AGES     = {{ age_groups | safe }};
+
+const C = {
+  blue  : '#00d4ff', red: '#ff5252', green: '#00e676',
+  amber : '#ffab40', purple: '#b388ff', gray: '#4a7090',
+  grid  : 'rgba(255,255,255,0.05)', text: '#8ab4d4'
+};
+const defaultOpts = {
+  responsive: true,
+  plugins   : { legend: { labels: { color: C.text, font: { size: 11 } } } },
+  scales    : {}
+};
+function axisOpts() {
+  return {
+    ticks : { color: C.text, font: { size: 10 } },
+    grid  : { color: C.grid },
+    border: { color: C.grid }
+  };
+}
+
+// 14-day trend
+new Chart('trendChart', {
+  type: 'line',
+  data: {
+    labels  : TREND.map(d => d.date),
+    datasets: [
+      { label:'Total', data: TREND.map(d=>d.total),
+        borderColor:C.blue,  backgroundColor:'rgba(0,212,255,0.08)',
+        fill:true, tension:0.4, pointRadius:3, borderWidth:2 },
+      { label:'Liver Disease', data: TREND.map(d=>d.liver_disease),
+        borderColor:C.red,   backgroundColor:'rgba(255,82,82,0.08)',
+        fill:true, tension:0.4, pointRadius:3, borderWidth:2 }
+    ]
+  },
+  options: { ...defaultOpts, scales: { x: axisOpts(), y: axisOpts() } }
+});
+
+// Breakdown doughnut
+new Chart('breakdownChart', {
+  type: 'doughnut',
+  data: {
+    labels  : ['Liver Disease','No Liver Disease'],
+    datasets: [{ data:[{{ stats.disease }},{{ stats.no_disease }}],
+      backgroundColor:['rgba(255,82,82,0.7)','rgba(0,230,118,0.7)'],
+      borderColor:['#ff5252','#00e676'], borderWidth:1 }]
+  },
+  options: { ...defaultOpts, cutout:'65%' }
+});
+
+// Gender
+new Chart('genderChart', {
+  type:'bar',
+  data:{
+    labels: Object.keys(GENDER),
+    datasets:[{ data: Object.values(GENDER),
+      backgroundColor:['rgba(0,212,255,0.6)','rgba(179,136,255,0.6)'],
+      borderColor:['#00d4ff','#b388ff'], borderWidth:1, borderRadius:6 }]
+  },
+  options:{ ...defaultOpts, plugins:{legend:{display:false}}, scales:{x:axisOpts(),y:axisOpts()} }
+});
+
+// Result colour distribution
+new Chart('colorChart', {
+  type:'doughnut',
+  data:{
+    labels:['Green (No Disease)','Amber (Borderline)','Red (Disease)'],
+    datasets:[{ data:[COLOR.green||0, COLOR.amber||0, COLOR.red||0],
+      backgroundColor:['rgba(0,230,118,0.7)','rgba(255,171,64,0.7)','rgba(255,82,82,0.7)'],
+      borderWidth:0 }]
+  },
+  options:{ ...defaultOpts, cutout:'60%' }
+});
+
+// Confidence
+new Chart('confChart', {
+  type:'doughnut',
+  data:{
+    labels:['High','Moderate','Low'],
+    datasets:[{ data:[CONF.High||0, CONF.Moderate||0, CONF.Low||0],
+      backgroundColor:['rgba(0,230,118,0.7)','rgba(255,171,64,0.7)','rgba(255,82,82,0.7)'],
+      borderWidth:0 }]
+  },
+  options:{ ...defaultOpts, cutout:'60%' }
+});
+
+// Age groups
+new Chart('ageChart', {
+  type:'bar',
+  data:{
+    labels: Object.keys(AGES),
+    datasets:[{ label:'Patients', data: Object.values(AGES),
+      backgroundColor:'rgba(0,212,255,0.6)', borderColor:'#00d4ff',
+      borderWidth:1, borderRadius:6 }]
+  },
+  options:{ ...defaultOpts, scales:{x:axisOpts(),y:axisOpts()} }
+});
+
+
+// Live refresh
+function refreshStats() {
+  fetch('/dashboard/api/stats').then(r=>r.json()).then(d=>{
+    document.getElementById('s-total').textContent    = d.total;
+    document.getElementById('s-disease').textContent  = d.disease;
+    document.getElementById('s-nodisease').textContent= d.no_disease;
+    document.getElementById('s-highconf').textContent = d.high_conf;
+  });
+}
+</script>
+{% endblock %}

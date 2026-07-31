@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block title %}LiverAI — Home{% endblock %}
+
+{% block content %}
+<!-- ── Hero ────────────────────────────────────────────────── -->
+<section style="text-align:center; padding:3rem 1rem 2rem; position:relative;">
+  <div style="display:inline-block; background:rgba(0,212,255,0.08); border:1px solid rgba(0,212,255,0.2);
+              border-radius:20px; padding:4px 14px; font-size:0.78rem; color:var(--accent);
+              letter-spacing:0.1em; margin-bottom:1.25rem;">
+    EXPLAINABLE AI &nbsp;·&nbsp; POST-HOC GLOBAL XAI &nbsp;·&nbsp; ENSEMBLE ML
+  </div>
+  <h1 style="font-size:clamp(1.8rem,4vw,3rem); font-weight:800; letter-spacing:-0.03em; line-height:1.15; margin-bottom:1rem;">
+    Liver Disease Prediction<br>
+    <span style="background:linear-gradient(135deg,var(--accent),#0066ff);
+                 -webkit-background-clip:text; -webkit-text-fill-color:transparent;">
+      Powered by Explainable AI
+    </span>
+  </h1>
+  <p style="max-width:580px; margin:0 auto 2rem; color:var(--text-secondary); font-size:1rem; line-height:1.7;">
+    A clinical decision support system combining 6 machine learning models in a
+    soft-voting ensemble — with full SHAP explainability for every prediction.
+  </p>
+  <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+    <a href="{{ url_for('predict.form') }}" class="btn btn-primary" style="padding:12px 28px; font-size:1rem;">
+      <i class="fas fa-flask"></i> Run Prediction
+    </a>
+    <a href="{{ url_for('dashboard.index') }}" class="btn btn-outline" style="padding:12px 28px; font-size:1rem;">
+      <i class="fas fa-chart-line"></i> View Dashboard
+    </a>
+  </div>
+</section>
+
+<!-- ── Quick stats ──────────────────────────────────────────── -->
+<div class="grid grid-4" style="margin:2rem 0;">
+  <div class="stat-card">
+    <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+    <div>
+      <div class="stat-value">{{ stats.total }}</div>
+      <div class="stat-label">Total Predictions</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon red"><i class="fas fa-virus"></i></div>
+    <div>
+      <div class="stat-value" style="color:var(--red);">{{ stats.disease }}</div>
+      <div class="stat-label">Liver Disease Detected</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green"><i class="fas fa-shield-halved"></i></div>
+    <div>
+      <div class="stat-value" style="color:var(--green);">{{ stats.no_disease }}</div>
+      <div class="stat-label">No Disease Found</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon amber"><i class="fas fa-percent"></i></div>
+    <div>
+      <div class="stat-value" style="color:var(--amber);">{{ stats.disease_pct }}%</div>
+      <div class="stat-label">Disease Rate</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Features + Recent ───────────────────────────────────── -->
+<div class="grid grid-2" style="gap:1.5rem; margin-bottom:2rem;">
+
+  <!-- Feature highlights -->
+  <div class="card">
+    <div class="card-title"><i class="fas fa-star"></i> System Capabilities</div>
+    <div style="display:flex; flex-direction:column; gap:0.85rem;">
+      {% set features = [
+        ('fa-brain', 'var(--accent)',  '6-Model Ensemble', 'RF · LR · DT · KNN · SVM · XGBoost — soft voting'),
+        ('fa-magnifying-glass-chart', 'var(--green)', 'SHAP Explanations', 'Feature-level impact on every prediction'),
+        ('fa-chart-bar', 'var(--amber)', 'Analytics Dashboard', 'Trends, distributions and prediction history'),
+        ('fa-clock-rotate-left', 'var(--red)', 'Patient Records', 'Full history, search, filter and CSV export'),
+        ('fa-sliders', 'var(--accent)', 'Optimal Threshold', 'Youden\'s J statistic — not a hardcoded 0.5'),
+        ('fa-shield-virus', 'var(--green)', 'SMOTEENN Balancing', 'Class imbalance handled inside CV folds'),
+      ] %}
+      {% for icon, color, title, desc in features %}
+      <div style="display:flex; gap:12px; align-items:flex-start;">
+        <div style="width:36px; height:36px; background:{{ color }}1a; border-radius:8px;
+                    display:flex; align-items:center; justify-content:center;
+                    color:{{ color }}; font-size:0.9rem; flex-shrink:0;">
+          <i class="fas {{ icon }}"></i>
+        </div>
+        <div>
+          <div style="font-size:0.9rem; font-weight:600;">{{ title }}</div>
+          <div style="font-size:0.78rem; color:var(--text-muted);">{{ desc }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Recent predictions -->
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+      <div class="card-title" style="margin:0;"><i class="fas fa-clock"></i> Recent Predictions</div>
+      <a href="{{ url_for('history.index') }}" class="btn btn-outline btn-sm">View All</a>
+    </div>
+    {% if recent %}
+    <div style="display:flex; flex-direction:column; gap:0.6rem;">
+      {% for rec in recent %}
+      <a href="{{ url_for('history.view', prediction_id=rec.id) }}"
+         style="display:flex; align-items:center; justify-content:space-between;
+                padding:10px 12px; background:var(--bg-elevated); border-radius:8px;
+                border:1px solid var(--border); text-decoration:none; transition:border-color 0.2s;"
+         onmouseover="this.style.borderColor='var(--accent)'"
+         onmouseout="this.style.borderColor='var(--border)'">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:8px; height:8px; border-radius:50%;
+                      background:{{ 'var(--red)' if rec.prediction == 'Liver Disease' else 'var(--green)' }};"></div>
+          <div>
+            <div style="font-size:0.875rem; font-weight:500; color:var(--text-primary);">
+              {{ rec.patient_name or 'Anonymous' }}
+            </div>
+            <div style="font-size:0.72rem; color:var(--text-muted);">
+              Age {{ rec.age }} · {{ rec.gender }} · {{ rec.timestamp.strftime('%b %d, %H:%M') }}
+            </div>
+          </div>
+        </div>
+        <span class="badge {{ 'badge-red' if rec.prediction == 'Liver Disease' else 'badge-green' }}">
+          {{ rec.prediction }}
+        </span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align:center; padding:2rem; color:var(--text-muted);">
+      <i class="fas fa-database" style="font-size:2rem; margin-bottom:0.5rem; display:block; opacity:0.3;"></i>
+      No predictions yet. <a href="{{ url_for('predict.form') }}" style="color:var(--accent);">Run the first one</a>.
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- ── Model pipeline visual ───────────────────────────────── -->
+<div class="card" style="margin-bottom:2rem;">
+  <div class="card-title" style="text-align:center; margin-bottom:1.5rem;">
+    <i class="fas fa-diagram-project"></i> Model Pipeline Architecture
+  </div>
+  <div style="display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:0.5rem;">
+    {% set steps = [
+      ('fa-file-medical', 'Patient Input', 'var(--accent)', '10 lab values'),
+      ('fa-gears', 'Feature Engineering', '#7c4dff', '20 features created'),
+      ('fa-code-branch', 'ImbPipeline', '#ff6d00', 'Scale → SMOTEENN'),
+      ('fa-sitemap', '6 Base Models', 'var(--red)', 'RF·LR·DT·KNN·SVM·XGB'),
+      ('fa-object-group', 'Soft Voting', 'var(--green)', 'Probability average'),
+      ('fa-sliders', 'Threshold', 'var(--amber)', "Youden's J"),
+      ('fa-magnifying-glass-chart', 'SHAP XAI', 'var(--accent)', 'Feature attribution'),
+      ('fa-file-waveform', 'Result', '#7c4dff', 'Prediction + Explanation'),
+    ] %}
+    {% for icon, label, color, sub in steps %}
+    <div style="display:flex; align-items:center; gap:0.5rem;">
+      <div style="text-align:center; background:var(--bg-elevated); border:1px solid var(--border);
+                  border-radius:10px; padding:10px 14px; min-width:100px;">
+        <i class="fas {{ icon }}" style="color:{{ color }}; font-size:1.1rem; margin-bottom:4px; display:block;"></i>
+        <div style="font-size:0.78rem; font-weight:600; color:var(--text-primary);">{{ label }}</div>
+        <div style="font-size:0.68rem; color:var(--text-muted);">{{ sub }}</div>
+      </div>
+      {% if not loop.last %}
+      <i class="fas fa-chevron-right" style="color:var(--text-muted); font-size:0.7rem;"></i>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

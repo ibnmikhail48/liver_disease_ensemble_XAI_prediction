@@ -1,0 +1,294 @@
+{% extends "base.html" %}
+{% block title %}LiverAI — Prediction Result #{{ record.id }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .verdict-green { --v-color:#00e676; --v-bg:rgba(0,230,118,0.06); --v-border:rgba(0,230,118,0.35); }
+  .verdict-amber { --v-color:#ffab40; --v-bg:rgba(255,171,64,0.06); --v-border:rgba(255,171,64,0.35); }
+  .verdict-red   { --v-color:#ff5252; --v-bg:rgba(255,82,82,0.06);  --v-border:rgba(255,82,82,0.35); }
+
+  .verdict-card {
+    background   : var(--v-bg);
+    border       : 2px solid var(--v-border);
+    border-radius: var(--radius);
+    padding      : 2.5rem 2rem;
+    margin-bottom: 1.5rem;
+    text-align   : center;
+  }
+  .verdict-icon-big {
+    font-size    : 4rem;
+    line-height  : 1;
+    margin-bottom: 1rem;
+    display      : block;
+  }
+  .verdict-main {
+    font-size    : 2.4rem;
+    font-weight  : 800;
+    color        : var(--v-color);
+    letter-spacing: -0.02em;
+    margin-bottom: 0.5rem;
+  }
+  .verdict-sub {
+    font-size    : 0.95rem;
+    color        : var(--text-secondary);
+    max-width    : 480px;
+    margin       : 0 auto 1.25rem;
+    line-height  : 1.7;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+{% set color      = record.result_color %}
+{% set is_disease = record.prediction == 'Liver Disease' %}
+
+<div class="page-header">
+  <div>
+    <div class="page-title">Prediction <span>#{{ record.id }}</span></div>
+    <div class="page-subtitle">
+      {{ record.patient_name or 'Anonymous' }} &nbsp;·&nbsp;
+      {{ record.timestamp.strftime('%B %d, %Y at %H:%M') }}
+    </div>
+  </div>
+  <div style="display:flex; gap:0.75rem;">
+    <a href="{{ url_for('predict.form') }}" class="btn btn-primary">
+      <i class="fas fa-plus"></i> New Prediction
+    </a>
+    <a href="{{ url_for('history.index') }}" class="btn btn-outline">
+      <i class="fas fa-clock-rotate-left"></i> History
+    </a>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- PRIMARY VERDICT — this is the only thing that matters     -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="verdict-card verdict-{{ color }}">
+
+  <span class="verdict-icon-big">
+    {% if color == 'green' %}✅{% elif color == 'amber' %}⚠️{% else %}🔴{% endif %}
+  </span>
+
+  <div class="verdict-main">{{ record.prediction }}</div>
+
+  <div class="verdict-sub">
+    {% if color == 'green' %}
+      Based on the provided lab values, the model classifies this patient as
+      <strong style="color:var(--green);">No Liver Disease</strong>.
+      Routine monitoring is advised as per standard clinical practice.
+    {% elif color == 'amber' %}
+      Based on the provided lab values, the model classifies this patient as having
+      <strong style="color:var(--amber);">Liver Disease</strong>.
+      The model's confidence is low — clinical review and confirmatory testing is advised.
+    {% else %}
+      Based on the provided lab values, the model classifies this patient as having
+      <strong style="color:var(--red);">Liver Disease</strong>.
+      Prompt clinical evaluation is strongly recommended.
+    {% endif %}
+  </div>
+
+  <!-- Confidence and threshold — supporting info only, not the verdict -->
+  <div style="display:inline-flex; gap:0.6rem; flex-wrap:wrap; justify-content:center;">
+    <span class="badge
+      {% if record.confidence == 'High' %}badge-green
+      {% elif record.confidence == 'Moderate' %}badge-amber
+      {% else %}badge-red{% endif %}">
+      <i class="fas fa-bullseye"></i>&nbsp; {{ record.confidence }} Confidence
+    </span>
+    <span class="badge badge-blue">
+      <i class="fas fa-sliders"></i>&nbsp; Decision Threshold: {{ record.threshold_used }}
+    </span>
+    <span class="badge badge-blue">
+      <i class="fas fa-hashtag"></i>&nbsp; Record #{{ record.id }}
+    </span>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- SUPPORTING INFORMATION (XAI) — explains the classification-->
+<!-- ══════════════════════════════════════════════════════════ -->
+
+<!-- Section label -->
+<div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;
+            letter-spacing:0.12em; margin-bottom:0.75rem; padding-left:2px;">
+  <i class="fas fa-magnifying-glass-chart"></i>
+  &nbsp; Explainability — Why did the model make this classification?
+</div>
+
+<div class="grid grid-2" style="gap:1.25rem; margin-bottom:1.25rem;">
+
+  <!-- SHAP plot -->
+  <div class="card">
+    <div class="card-title">
+      <i class="fas fa-chart-bar"></i> SHAP Feature Contributions
+    </div>
+    {% if record.shap_plot_path %}
+      <img src="{{ record.shap_plot_path }}"
+          alt="SHAP explanation" style="width:100%; border-radius:8px;"/>
+    {% else %}
+      <div style="text-align:center; padding:2rem; color:var(--text-muted);">
+        <i class="fas fa-chart-bar" style="font-size:2rem; opacity:0.3;
+          display:block; margin-bottom:0.5rem;"></i>
+        SHAP plot unavailable for this record.
+      </div>
+    {% endif %}
+    <div style="margin-top:0.75rem; padding:10px 12px; background:var(--bg-surface);
+                border-radius:8px; border:1px solid var(--border);
+                font-size:0.78rem; color:var(--text-muted); line-height:1.6;">
+      <strong style="color:var(--text-secondary);">How to read:</strong>
+      <span style="color:#e74c3c;">Red bars</span> = feature pushed the model
+      toward classifying as Liver Disease &nbsp;|&nbsp;
+      <span style="color:#2ecc71;">Green bars</span> = feature pushed away.
+    </div>
+  </div>
+
+  <!-- Top contributing features -->
+  <div class="card">
+    <div class="card-title">
+      <i class="fas fa-list-ol"></i> Top Features That Drove This Classification
+    </div>
+    {% if top_features %}
+      <div style="display:flex; flex-direction:column; gap:0.5rem;">
+        {% for feat in top_features %}
+        <div style="display:flex; align-items:center; justify-content:space-between;
+                    padding:9px 12px; background:var(--bg-elevated); border-radius:8px;
+                    border-left: 3px solid
+                    {{ '#e74c3c' if feat.shap_value > 0 else '#2ecc71' }}">
+          <div style="flex:1;">
+            <div style="font-size:0.85rem; font-weight:600; color:var(--text-primary);">
+              {{ feat.feature.replace('_', ' ') }}
+            </div>
+            <div style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;">
+              Patient value:
+              <code style="color:var(--accent); font-family:var(--font-mono);">
+                {{ feat.raw_value }}
+              </code>
+              &nbsp;·&nbsp;
+              <span style="color: {{ '#e74c3c' if feat.direction == 'increases' else '#2ecc71' }};">
+                {{ feat.direction }} disease classification
+              </span>
+            </div>
+          </div>
+          <div style="font-family:var(--font-mono); font-size:0.85rem; font-weight:700;
+                      color:{{ '#e74c3c' if feat.shap_value > 0 else '#2ecc71' }};
+                      margin-left:12px; white-space:nowrap;">
+            {{ '%+.4f' | format(feat.shap_value) }}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div style="text-align:center; color:var(--text-muted); padding:2rem;">
+        <i class="fas fa-circle-info" style="font-size:1.5rem; opacity:0.3;
+          display:block; margin-bottom:0.5rem;"></i>
+        SHAP values not available for this record.
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- LAB VALUES + NOTES                                        -->
+<!-- ══════════════════════════════════════════════════════════ -->
+
+<div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;
+            letter-spacing:0.12em; margin-bottom:0.75rem; padding-left:2px;">
+  <i class="fas fa-file-medical"></i>&nbsp; Patient Data & Clinical Notes
+</div>
+
+<div class="grid grid-2" style="gap:1.25rem;">
+
+  <div class="card">
+    <div class="card-title"><i class="fas fa-vial"></i> Lab Values Entered</div>
+    <div class="grid grid-2" style="gap:0.5rem;">
+      {% set labs = [
+        ('Age',                  record.age,                         'years'),
+        ('Gender',               record.gender,                      ''),
+        ('Total Bilirubin',      record.total_bilirubin,             'mg/dL'),
+        ('Direct Bilirubin',     record.direct_bilirubin,            'mg/dL'),
+        ('Alkaline Phosphotase', record.alkaline_phosphotase,        'IU/L'),
+        ('ALT',                  record.alamine_aminotransferase,    'IU/L'),
+        ('AST',                  record.aspartate_aminotransferase,  'IU/L'),
+        ('Total Proteins',       record.total_protiens,              'g/dL'),
+        ('Albumin',              record.albumin,                     'g/dL'),
+        ('AG Ratio',             record.albumin_globulin_ratio,      ''),
+      ] %}
+      {% for label, val, unit in labs %}
+      <div style="padding:8px 10px; background:var(--bg-elevated); border-radius:6px;">
+        <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase;
+                    letter-spacing:0.06em;">{{ label }}</div>
+        <div style="font-size:0.9rem; font-weight:600;
+                    font-family:var(--font-mono); color:var(--accent);">
+          {{ val }}
+          <span style="font-size:0.72rem; color:var(--text-muted);
+                      font-family:var(--font-main);">{{ unit }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><i class="fas fa-notes-medical"></i> Clinical Notes</div>
+    <div style="font-size:0.85rem; color:var(--text-secondary);
+                margin-bottom:1rem; line-height:1.6; min-height:48px;">
+      {{ record.notes or 'No notes recorded for this prediction.' }}
+    </div>
+
+    <div style="padding:10px; background:var(--bg-surface); border-radius:8px;
+                border:1px solid var(--border); margin-bottom:1rem;">
+      <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:6px;
+                  letter-spacing:0.06em; text-transform:uppercase;">Update Notes</div>
+      <textarea id="notesInput" rows="3" class="form-control"
+                placeholder="Add clinical observations..."
+                style="resize:vertical;">{{ record.notes or '' }}</textarea>
+      <button onclick="saveNotes({{ record.id }})"
+              class="btn btn-outline btn-sm" style="margin-top:8px;">
+        <i class="fas fa-save"></i> Save Notes
+      </button>
+      <span id="notesSaved" style="font-size:0.8rem; color:var(--green);
+            margin-left:8px; display:none;">✓ Saved</span>
+    </div>
+
+    <div style="padding:10px; background:var(--bg-surface); border-radius:8px;
+                border:1px solid var(--border);">
+      <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:8px;
+                  letter-spacing:0.06em; text-transform:uppercase;">Model Details</div>
+      <div style="display:flex; flex-direction:column; gap:5px;">
+        {% for label, val in [
+          ('Model',       'Soft Voting Ensemble (6 classifiers)'),
+          ('Threshold',   record.threshold_used),
+          ('Confidence',  record.confidence),
+          ('Record ID',   '#' ~ record.id),
+        ] %}
+        <div style="display:flex; justify-content:space-between; font-size:0.8rem;">
+          <span style="color:var(--text-muted);">{{ label }}</span>
+          <span style="font-weight:500; font-family:var(--font-mono);
+                color:var(--text-secondary);">{{ val }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function saveNotes(id) {
+  const notes = document.getElementById('notesInput').value;
+  const fd    = new FormData();
+  fd.append('notes', notes);
+  fetch(`/history/update-notes/${id}`, { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(() => {
+      const el = document.getElementById('notesSaved');
+      el.style.display = 'inline';
+      setTimeout(() => el.style.display = 'none', 2500);
+    });
+}
+</script>
+{% endblock %}

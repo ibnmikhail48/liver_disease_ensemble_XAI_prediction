@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+{% block title %}LiverAI — About the System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">About <span>LiverAI</span></div>
+    <div class="page-subtitle">System architecture, models, dataset and explainability methods</div>
+  </div>
+  <a href="{{ url_for('predict.form') }}" class="btn btn-primary">
+    <i class="fas fa-flask"></i> Run Prediction
+  </a>
+</div>
+
+<!-- ── Project Overview ─────────────────────────────────────── -->
+<div class="card" style="margin-bottom:1.25rem;">
+  <div class="card-title"><i class="fas fa-circle-info"></i> Project Overview</div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:2rem;">
+    <div>
+      <p style="color:var(--text-secondary); line-height:1.8; font-size:0.9rem;">
+        <strong style="color:var(--text-primary);">LiverAI</strong> is a clinical decision support system
+        for liver disease prediction built on an explainable ensemble machine learning pipeline.
+        It combines six diverse classifiers into a soft-voting ensemble, then applies
+        post-hoc global explainability methods to make every prediction transparent and
+        clinically interpretable.
+      </p>
+      <p style="color:var(--text-secondary); line-height:1.8; font-size:0.9rem; margin-top:0.75rem;">
+        The system is designed around the principle that <em>accuracy alone is insufficient</em>
+        in a medical context — clinicians need to understand <em>why</em> a model made a
+        particular prediction before acting on it.
+      </p>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:0.6rem;">
+      {% for label, val in [
+        ('Dataset',      model_info.dataset),
+        ('Ensemble',     model_info.ensemble),
+        ('Balancing',    model_info.balancing),
+        ('Threshold',    model_info.threshold),
+        ('Framework',    'Flask · scikit-learn · XGBoost · SHAP · LIME'),
+        ('Database',     'SQLite via SQLAlchemy'),
+      ] %}
+      <div style="display:flex; gap:10px; padding:8px 12px; background:var(--bg-elevated);
+                  border-radius:8px; border:1px solid var(--border);">
+        <span style="font-size:0.75rem; color:var(--text-muted); min-width:90px;
+                     text-transform:uppercase; letter-spacing:0.06em; padding-top:1px;">{{ label }}</span>
+        <span style="font-size:0.83rem; color:var(--text-primary); font-weight:500;">{{ val }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ── 6 Models ──────────────────────────────────────────────── -->
+<div class="card" style="margin-bottom:1.25rem;">
+  <div class="card-title"><i class="fas fa-sitemap"></i> Base Models — Soft Voting Ensemble</div>
+  <div class="grid grid-3" style="gap:0.85rem;">
+    {% set model_icons = ['fa-tree','fa-chart-line','fa-code-branch','fa-circle-nodes','fa-vector-square','fa-bolt'] %}
+    {% set model_colors = ['#00d4ff','#00e676','#ffab40','#b388ff','#ff5252','#ff6d00'] %}
+    {% for m in model_info.models %}
+    <div style="padding:1rem; background:var(--bg-elevated); border-radius:10px;
+                border:1px solid var(--border); border-top:3px solid {{ model_colors[loop.index0] }};">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:0.6rem;">
+        <div style="width:34px; height:34px; border-radius:8px;
+                    background:{{ model_colors[loop.index0] }}1a;
+                    display:flex; align-items:center; justify-content:center;
+                    color:{{ model_colors[loop.index0] }}; font-size:0.9rem;">
+          <i class="fas {{ model_icons[loop.index0] }}"></i>
+        </div>
+        <div style="font-weight:700; font-size:0.9rem;">{{ m.name }}</div>
+      </div>
+      <div style="font-size:0.78rem; color:var(--text-muted); margin-bottom:4px;">
+        <span style="color:var(--text-secondary);">Type:</span> {{ m.type }}
+      </div>
+      <div style="font-size:0.78rem; color:var(--text-muted);">
+        <span style="color:var(--text-secondary);">Tuning:</span> {{ m.tuning }}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Ensemble explanation -->
+  <div style="margin-top:1rem; padding:12px 16px; background:rgba(0,212,255,0.05);
+              border:1px solid rgba(0,212,255,0.2); border-radius:8px;">
+    <div style="font-size:0.8rem; color:var(--text-secondary); line-height:1.7;">
+      <strong style="color:var(--accent);">Soft Voting:</strong>
+      Each model outputs a probability. The ensemble averages all 6 probabilities and applies
+      an optimal threshold (Youden's J statistic) to produce the final prediction —
+      rather than using a hardcoded 0.5 cutoff.
+    </div>
+  </div>
+</div>
+
+<!-- ── XAI Methods ───────────────────────────────────────────── -->
+<div class="card" style="margin-bottom:1.25rem;">
+  <div class="card-title"><i class="fas fa-magnifying-glass-chart"></i> Post-hoc Global Explainability Methods</div>
+
+  {% set xai_details = [
+    ('fa-circle-nodes', '#00d4ff',
+     'SHAP TreeExplainer',
+     'Random Forest & XGBoost',
+     'Computes exact Shapley values analytically from the tree structure. Fast and exact — no sampling required. Shows how each feature pushes the prediction above or below the base rate.'),
+    ('fa-microchip', '#b388ff',
+     'SHAP KernelExplainer',
+     'Logistic Regression (model-agnostic)',
+     'Model-agnostic SHAP estimation using weighted linear regression on perturbed inputs. Works with any model regardless of internal structure.'),
+    ('fa-chart-bar', '#00e676',
+     'Permutation Feature Importance',
+     'All 6 models',
+     'Shuffles each feature across test samples and measures the drop in ROC-AUC. Large drop = model heavily relies on that feature. Averaged across all 6 models for a robust global ranking.'),
+    ('fa-chart-area', '#ffab40',
+     'Partial Dependence Plots (PDP)',
+     'Random Forest & XGBoost',
+     'Shows the average predicted disease probability as a single feature varies across its range, with all other features held at their observed values. Reveals direction and shape of global effects.'),
+    ('fa-lines-leaning', '#ff5252',
+     'Individual Conditional Expectation (ICE)',
+     'Random Forest',
+     'Extends PDP by showing a separate line per patient. Diverging ICE lines reveal heterogeneous subgroup effects hidden by the PDP average.'),
+    ('fa-diagram-project', '#ff6d00',
+     'LIME Global Surrogate',
+     'Random Forest',
+     'Runs LIME on every test patient and averages the local linear coefficients for a global view. Shows which features consistently matter most and in which direction.'),
+    ('fa-tree', '#7c4dff',
+     'Global Surrogate Decision Tree',
+     'Final Ensemble',
+     'Trains a simple depth-5 decision tree to mimic the ensemble predictions. Fidelity score measures how well it reproduces the black-box. Human-readable decision rules extracted directly.'),
+    ('fa-ranking-star', '#00d4ff',
+     'Cross-Method Consensus Ranking',
+     'All methods combined',
+     'Normalises and averages importance scores from all 5 methods. Features consistently ranked high across all methods are the most reliably important globally.'),
+  ] %}
+
+  <div style="display:flex; flex-direction:column; gap:0.75rem;">
+    {% for icon, color, name, scope, desc in xai_details %}
+    <div style="display:flex; gap:1rem; padding:12px 14px; background:var(--bg-elevated);
+                border-radius:10px; border:1px solid var(--border);
+                border-left:3px solid {{ color }};">
+      <div style="width:38px; height:38px; border-radius:8px; flex-shrink:0;
+                  background:{{ color }}1a; display:flex; align-items:center;
+                  justify-content:center; color:{{ color }}; font-size:1rem;">
+        <i class="fas {{ icon }}"></i>
+      </div>
+      <div style="flex:1;">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:3px; flex-wrap:wrap;">
+          <span style="font-weight:700; font-size:0.9rem;">{{ name }}</span>
+          <span style="font-size:0.72rem; padding:2px 8px; border-radius:12px;
+                       background:{{ color }}1a; color:{{ color }}; border:1px solid {{ color }}33;">
+            {{ scope }}
+          </span>
+        </div>
+        <p style="font-size:0.82rem; color:var(--text-muted); line-height:1.6; margin:0;">{{ desc }}</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ── Feature Engineering ───────────────────────────────────── -->
+<div class="card" style="margin-bottom:1.25rem;">
+  <div class="card-title"><i class="fas fa-gears"></i> Feature Engineering Pipeline</div>
+  <div class="grid grid-2" style="gap:0.75rem;">
+    {% set steps = [
+      ('1', 'Missing Value Imputation',       'Median for numerical, mode for categorical'),
+      ('2', 'Duplicate Removal',              'Exact row deduplication'),
+      ('3', 'Categorical Encoding',           'LabelEncoder for Gender (Male=1, Female=0)'),
+      ('4', 'Outlier Handling',               'Winsorization at IQR × 1.5 boundaries'),
+      ('5', 'Log Transformation',             'log1p applied to all right-skewed enzyme features'),
+      ('6', 'Feature Creation',               '10 domain features: De Ritis ratio, Enzyme Load, Globulin, etc.'),
+      ('7', 'Feature Selection',              'Consensus ranking: ANOVA F-score + Mutual Info + RF Importance'),
+      ('8', 'Feature Validation',             'Missing, infinite, near-zero variance and collinearity checks'),
+      ('9', 'Standard Scaling',               'StandardScaler fitted on training fold only (no leakage)'),
+      ('10','SMOTEENN Balancing',             'Inside ImbPipeline — applied per CV fold, never on test set'),
+    ] %}
+    {% for num, name, desc in steps %}
+    <div style="display:flex; gap:10px; padding:10px 12px; background:var(--bg-elevated);
+                border-radius:8px; border:1px solid var(--border);">
+      <div style="width:26px; height:26px; border-radius:50%; flex-shrink:0;
+                  background:linear-gradient(135deg,var(--accent),#0066ff);
+                  display:flex; align-items:center; justify-content:center;
+                  font-size:0.72rem; font-weight:700; color:#fff;">{{ num }}</div>
+      <div>
+        <div style="font-size:0.85rem; font-weight:600;">{{ name }}</div>
+        <div style="font-size:0.78rem; color:var(--text-muted);">{{ desc }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ── Input Features Reference ─────────────────────────────── -->
+<div class="card" style="margin-bottom:1.25rem;">
+  <div class="card-title"><i class="fas fa-table-list"></i> Input Features Reference</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Feature</th><th>Unit</th><th>Normal Range</th><th>Clinical Significance</th></tr>
+      </thead>
+      <tbody>
+        {% set ref = [
+          ('Age',                         'years',   '1 – 120',        'Age is a risk factor; liver disease prevalence increases with age'),
+          ('Gender',                       '—',       'Male / Female',  'Males have higher prevalence of liver disease in the ILPD dataset'),
+          ('Total Bilirubin',              'mg/dL',   '0.1 – 1.2',     'Elevated levels indicate impaired bilirubin processing by the liver'),
+          ('Direct Bilirubin',             'mg/dL',   '0.0 – 0.3',     'Direct fraction; elevated in hepatocellular and obstructive disease'),
+          ('Alkaline Phosphotase (ALP)',   'IU/L',    '44 – 147',      'Enzyme elevated in bile duct obstruction and liver infiltration'),
+          ('ALT (Alamine Aminotransferase)','IU/L',   '7 – 56',        'Most liver-specific enzyme; elevated in hepatocellular damage'),
+          ('AST (Aspartate Aminotransferase)','IU/L', '10 – 40',       'Elevated in liver and cardiac damage; De Ritis ratio (AST/ALT) is diagnostic'),
+          ('Total Proteins',               'g/dL',    '6.0 – 8.3',     'Low levels indicate reduced liver synthesis capacity'),
+          ('Albumin',                      'g/dL',    '3.5 – 5.0',     'Primary protein made by liver; low albumin = chronic liver dysfunction'),
+          ('Albumin/Globulin Ratio',       '—',       '1.0 – 2.5',     'Reversed ratio (&lt;1.0) associated with liver disease and inflammation'),
+        ] %}
+        {% for feat, unit, normal, sig in ref %}
+        <tr>
+          <td style="font-weight:600; font-size:0.875rem; white-space:nowrap;">{{ feat }}</td>
+          <td style="font-family:var(--font-mono); font-size:0.8rem; color:var(--accent);">{{ unit }}</td>
+          <td style="font-family:var(--font-mono); font-size:0.8rem; color:var(--green);">{{ normal }}</td>
+          <td style="font-size:0.8rem; color:var(--text-muted);">{{ sig }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── Disclaimer ────────────────────────────────────────────── -->
+<div style="padding:14px 18px; background:rgba(255,171,64,0.07);
+            border:1px solid rgba(255,171,64,0.25); border-radius:10px; margin-bottom:1.25rem;">
+  <div style="display:flex; gap:10px; align-items:flex-start;">
+    <i class="fas fa-triangle-exclamation" style="color:var(--amber); margin-top:2px; flex-shrink:0;"></i>
+    <div style="font-size:0.82rem; color:var(--text-secondary); line-height:1.7;">
+      <strong style="color:var(--amber);">Clinical Disclaimer:</strong>
+      This system is a research and decision-support tool only. It is not a substitute for
+      professional medical diagnosis, clinical judgment, or laboratory confirmation.
+      All predictions should be reviewed by a qualified healthcare professional before
+      any clinical action is taken. The model was trained on the ILPD dataset (583 patients)
+      and may not generalise to all patient populations.
+    </div>
+  </div>
+</div>
+{% endblock %}
