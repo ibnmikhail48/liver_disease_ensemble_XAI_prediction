@@ -25,7 +25,7 @@ instance/
 static/img/shap_plots/
 
 # ── ML model artefacts (large files — store separately) ────────
-liver_disease_models/*.pkl
+#liver_disease_models/*.pkl
 liver_disease_xai/*.pkl
 liver_disease_xai/*.npy
 
