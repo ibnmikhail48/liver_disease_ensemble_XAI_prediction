@@ -1,0 +1,44 @@
+{
+  "methods_applied": [
+    "SHAP TreeExplainer (RF, XGBoost)",
+    "SHAP KernelExplainer (LR \u2014 model-agnostic)",
+    "SHAP Beeswarm Summary Plot",
+    "SHAP Bar Plot",
+    "SHAP Heatmap",
+    "SHAP Dependence Plots",
+    "Permutation Feature Importance",
+    "Partial Dependence Plots (PDP)",
+    "Individual Conditional Expectation (ICE)",
+    "LIME Global Surrogate",
+    "Global Surrogate Decision Tree",
+    "Cross-Method Consensus"
+  ],
+  "explainability_type": "Post-hoc Global",
+  "model_explained": "Final Soft Voting Ensemble + individual base models",
+  "top5_features_consensus": [
+    "Bili_AST_Interaction",
+    "Albumin_Protein_Ratio",
+    "ALT_Albumin_Ratio",
+    "Bilirubin_Protein",
+    "Enzyme_Load"
+  ],
+  "surrogate_fidelity_test": 0.7852,
+  "features_explained": [
+    "Enzyme_Load",
+    "ALT_Albumin_Ratio",
+    "Bilirubin_Protein",
+    "Bili_AST_Interaction",
+    "Albumin_Protein_Ratio",
+    "Aspartate_Aminotransferase",
+    "AST_ALT_Ratio",
+    "Alkaline_Phosphotase_log",
+    "Aspartate_Aminotransferase_log",
+    "Alamine_Aminotransferase_log",
+    "Alkaline_Phosphotase",
+    "Alamine_Aminotransferase",
+    "Total_Bilirubin",
+    "Direct_Bilirubin_log"
+  ],
+  "n_test_samples": 3817,
+  "lime_note": "LIME explainer not pickled \u2014 recreate from X_train_res + feature_names. LIME coefficients matrix saved as lime_coefficients_all_samples.csv"
+}

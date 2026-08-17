@@ -14,12 +14,16 @@ import matplotlib.patches as mpatches
 from datetime import datetime
 import cloudinary.uploader
 import io
+from sklearn.pipeline import Pipeline
 
 
 # ── Paths ──────────────────────────────────────────────────────────────────
-MODEL_DIR   = os.path.join(os.path.dirname(__file__), 'liver_disease_models')
-XAI_DIR     = os.path.join(os.path.dirname(__file__), 'liver_disease_xai')
+# ml_engine.py is inside /utils/
+# The model folders are in the project root.
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+MODEL_DIR = os.path.join(BASE_DIR, 'liver_disease_models')
+XAI_DIR   = os.path.join(BASE_DIR, 'liver_disease_xai')
 
 class LiverDiseasePredictor:
     """
@@ -53,6 +57,14 @@ class LiverDiseasePredictor:
                 self.rf_pipeline = joblib.load(rf_path)
                 # Extract raw RF from pipeline for TreeExplainer
                 self.rf_model = self.rf_pipeline.named_steps['clf']
+                # Extract ONLY the scaler for preprocessing before SHAP.
+                # NOTE: this pipeline also contains a SMOTEENN step, which
+                # is a training-time class-balancing resampler with no
+                # .transform() method — it must NEVER be applied at
+                # inference/explanation time, only the scaler should be.
+                self.rf_preprocessor = self.rf_pipeline.named_steps.get('scaler', None)
+            else:
+                self.rf_preprocessor = None
             if os.path.exists(xgb_path):
                 self.xgb_pipeline = joblib.load(xgb_path)
 
@@ -201,18 +213,29 @@ class LiverDiseasePredictor:
         }
 
     # ── SHAP local explanation ─────────────────────────────────────────────
-    def _explain(self, X_scaled, feature_map):
+    def _explain(self, X_raw, feature_map):
         """
         Generates SHAP values for a single prediction.
-        X_scaled: already-scaled (1, n_features) array
+        X_raw: raw, unscaled (1, n_features) array in SELECTED_FEATURES order
+               (same array used for the ensemble prediction).
         Returns: shap_dict, top_features list, plot_path
         """
         try:
             if self.shap_explainer is None:
                 return {}, [], None
 
+            # ── Apply the SAME preprocessing the RF was trained on ──
+            # (e.g. StandardScaler) before handing it to TreeExplainer.
+            # Without this, the tree sees raw values on a completely
+            # different scale than it was trained on, producing
+            # meaningless/uniformly-biased SHAP values.
+            if self.rf_preprocessor is not None:
+                X_for_shap = self.rf_preprocessor.transform(X_raw)
+            else:
+                X_for_shap = X_raw
+
             # SHAP values for the positive class
-            explanation = self.shap_explainer(X_scaled)
+            explanation = self.shap_explainer(X_for_shap)
 
             sv = explanation.values
             
