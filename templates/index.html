@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}LiverAI — Home{% endblock %}
+{% block title %}HepatoSense — Home{% endblock %}
 
 {% block content %}
 <!-- ── Hero ────────────────────────────────────────────────── -->
@@ -10,7 +10,7 @@
     EXPLAINABLE AI &nbsp;·&nbsp; POST-HOC GLOBAL XAI &nbsp;·&nbsp; ENSEMBLE ML
   </div>
   <h1 style="font-size:clamp(1.8rem,4vw,3rem); font-weight:800; letter-spacing:-0.03em; line-height:1.15; margin-bottom:1rem;">
-    Liver Disease Prediction<br>
+    Liver Disease Detection<br>
     <span style="background:linear-gradient(135deg,var(--accent),#0066ff);
                  -webkit-background-clip:text; -webkit-text-fill-color:transparent;">
       Powered by Explainable AI
@@ -18,11 +18,11 @@
   </h1>
   <p style="max-width:580px; margin:0 auto 2rem; color:var(--text-secondary); font-size:1rem; line-height:1.7;">
     A clinical decision support system combining 6 machine learning models in a
-    soft-voting ensemble — with full SHAP explainability for every prediction.
+    soft-voting ensemble — with full SHAP explainability for every detection.
   </p>
   <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
     <a href="{{ url_for('predict.form') }}" class="btn btn-primary" style="padding:12px 28px; font-size:1rem;">
-      <i class="fas fa-flask"></i> Run Prediction
+      <i class="fas fa-flask"></i> Run Detection
     </a>
     <a href="{{ url_for('dashboard.index') }}" class="btn btn-outline" style="padding:12px 28px; font-size:1rem;">
       <i class="fas fa-chart-line"></i> View Dashboard
@@ -96,7 +96,7 @@
   <!-- Recent predictions -->
   <div class="card">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-      <div class="card-title" style="margin:0;"><i class="fas fa-clock"></i> Recent Predictions</div>
+      <div class="card-title" style="margin:0;"><i class="fas fa-clock"></i> Recent Detections</div>
       <a href="{{ url_for('history.index') }}" class="btn btn-outline btn-sm">View All</a>
     </div>
     {% if recent %}

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}LiverAI — Prediction Result #{{ record.id }}{% endblock %}
+{% block title %}HepatoSense — Prediction Result #{{ record.id }}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -44,7 +44,7 @@
 
 <div class="page-header">
   <div>
-    <div class="page-title">Prediction <span>#{{ record.id }}</span></div>
+    <div class="page-title">Detection <span>#{{ record.id }}</span></div>
     <div class="page-subtitle">
       {{ record.patient_name or 'Anonymous' }} &nbsp;·&nbsp;
       {{ record.timestamp.strftime('%B %d, %Y at %H:%M') }}
@@ -52,7 +52,7 @@
   </div>
   <div style="display:flex; gap:0.75rem;">
     <a href="{{ url_for('predict.form') }}" class="btn btn-primary">
-      <i class="fas fa-plus"></i> New Prediction
+      <i class="fas fa-plus"></i> New Detection
     </a>
     <a href="{{ url_for('history.index') }}" class="btn btn-outline">
       <i class="fas fa-clock-rotate-left"></i> History

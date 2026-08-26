@@ -3,39 +3,105 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>{% block title %}LiverAI — Liver Disease Prediction System{% endblock %}</title>
+
+  <title>{% block title %}HepatoSense — Liver Disease Detecttion System{% endblock %}</title>
+
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- ── Anti-flash: apply saved theme BEFORE first paint ── -->
+  <script>
+    (function () {
+      var theme = localStorage.getItem('HepatoSense-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+
   <style>
+
     :root {
+      /* ── Dark Theme (default / current design) ── */
       --bg-base      : #060d1a;
       --bg-surface   : #0d1b2e;
       --bg-card      : #112240;
       --bg-elevated  : #172a4a;
+
       --border       : #1e3a5f;
       --border-light : #2a4d72;
+
       --accent       : #00d4ff;
       --accent-dim   : #0099bb;
       --accent-glow  : rgba(0,212,255,0.15);
+
       --green        : #00e676;
       --green-dim    : #00a152;
+
       --red          : #ff5252;
       --red-dim      : #c62828;
+
       --amber        : #ffab40;
-      --text-primary : #e8f4fd;
-      --text-secondary:#8ab4d4;
-      --text-muted   : #4a7090;
+
+      --text-primary  : #e8f4fd;
+      --text-secondary: #8ab4d4;
+      --text-muted    : #4a7090;
+
       --font-main    : 'Space Grotesk', sans-serif;
       --font-mono    : 'JetBrains Mono', monospace;
+
       --radius       : 12px;
       --radius-sm    : 8px;
+
       --shadow       : 0 4px 24px rgba(0,0,0,0.4);
       --shadow-glow  : 0 0 30px rgba(0,212,255,0.1);
+
+      /* theme-specific extras */
+      --navbar-bg    : rgba(13,27,46,0.95);
+      --table-hover  : var(--bg-elevated);
+      --scrollbar-bg : var(--bg-base);
+      --scrollbar-thumb: var(--border-light);
     }
+
+    /* ── Light Theme ── */
+    html[data-theme="light"] {
+      --bg-base      : #f4f7fb;
+      --bg-surface   : #ffffff;
+      --bg-card      : #ffffff;
+      --bg-elevated  : #eef4f9;
+
+      --border       : #d7e2ec;
+      --border-light : #b8cad9;
+
+      --accent       : #0099bb;
+      --accent-dim   : #007c99;
+      --accent-glow  : rgba(0,153,187,0.15);
+
+      --green        : #00a152;
+      --green-dim    : #008f48;
+
+      --red          : #d32f2f;
+      --red-dim      : #b71c1c;
+
+      --amber        : #e68900;
+
+      --text-primary  : #17212b;
+      --text-secondary: #486174;
+      --text-muted    : #71879a;
+
+      --shadow       : 0 4px 20px rgba(30,60,90,0.10);
+      --shadow-glow  : 0 0 25px rgba(0,153,187,0.08);
+
+      --navbar-bg    : rgba(255,255,255,0.94);
+      --table-hover  : var(--bg-elevated);
+      --scrollbar-bg : var(--bg-base);
+      --scrollbar-thumb: var(--border-light);
+    }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     html { scroll-behavior: smooth; }
+
     body {
       font-family: var(--font-main);
       background : var(--bg-base);
@@ -43,11 +109,12 @@
       min-height : 100vh;
       display    : flex;
       flex-direction: column;
+      transition : background-color 0.25s ease, color 0.25s ease;
     }
 
     /* ── Navbar ── */
     .navbar {
-      background  : rgba(13,27,46,0.95);
+      background  : var(--navbar-bg);
       border-bottom: 1px solid var(--border);
       backdrop-filter: blur(12px);
       position    : sticky;
@@ -58,7 +125,9 @@
       display     : flex;
       align-items : center;
       justify-content: space-between;
+      transition  : background-color 0.25s ease, border-color 0.25s ease;
     }
+
     .navbar-brand {
       display    : flex;
       align-items: center;
@@ -66,6 +135,7 @@
       text-decoration: none;
       color      : var(--text-primary);
     }
+
     .brand-icon {
       width       : 36px;
       height      : 36px;
@@ -75,18 +145,24 @@
       align-items : center;
       justify-content: center;
       font-size   : 16px;
+      color       : #fff;
     }
+
     .brand-name {
       font-size  : 1.2rem;
       font-weight: 700;
       letter-spacing: -0.02em;
     }
+
     .brand-name span { color: var(--accent); }
+
     .nav-links {
       display  : flex;
+      align-items: center;
       gap      : 4px;
       list-style: none;
     }
+
     .nav-links a {
       display       : flex;
       align-items   : center;
@@ -99,18 +175,50 @@
       font-weight   : 500;
       transition    : all 0.2s;
     }
+
     .nav-links a:hover,
     .nav-links a.active {
       color      : var(--text-primary);
       background : var(--bg-elevated);
     }
+
     .nav-links a.active { color: var(--accent); }
+
     .nav-cta {
       background : linear-gradient(135deg, var(--accent), #0066ff) !important;
       color      : #fff !important;
       font-weight: 600 !important;
     }
+
     .nav-cta:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    /* ── Theme Toggle ── */
+    .theme-toggle {
+      width: 38px;
+      height: 38px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border-light);
+      border-radius: 50%;
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: background-color 0.2s ease, color 0.2s ease,
+                  border-color 0.2s ease, transform 0.2s ease;
+    }
+
+    .theme-toggle:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+      transform: rotate(15deg);
+    }
+
+    .theme-toggle:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
 
     /* ── Main layout ── */
     .main-content { flex: 1; padding: 2rem; max-width: 1400px; margin: 0 auto; width: 100%; }
@@ -122,7 +230,9 @@
       border-radius: var(--radius);
       padding      : 1.5rem;
       box-shadow   : var(--shadow);
+      transition   : background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
     }
+
     .card-title {
       font-size  : 1rem;
       font-weight: 600;
@@ -141,7 +251,9 @@
       display      : flex;
       align-items  : center;
       gap          : 1rem;
+      transition   : background-color 0.25s ease, border-color 0.25s ease;
     }
+
     .stat-icon {
       width         : 48px;
       height        : 48px;
@@ -152,16 +264,19 @@
       font-size     : 1.3rem;
       flex-shrink   : 0;
     }
+
     .stat-icon.blue   { background: rgba(0,212,255,0.12); color: var(--accent); }
     .stat-icon.red    { background: rgba(255,82,82,0.12);  color: var(--red); }
     .stat-icon.green  { background: rgba(0,230,118,0.12);  color: var(--green); }
     .stat-icon.amber  { background: rgba(255,171,64,0.12); color: var(--amber); }
+
     .stat-value {
       font-size  : 1.8rem;
       font-weight: 700;
       line-height: 1;
       font-family: var(--font-mono);
     }
+
     .stat-label { font-size: 0.8rem; color: var(--text-muted); margin-top: 3px; }
 
     /* ── Buttons ── */
@@ -179,12 +294,13 @@
       transition   : all 0.2s;
       text-decoration: none;
     }
+
     .btn-primary   { background: linear-gradient(135deg,var(--accent),#0066ff); color:#fff; }
     .btn-primary:hover { opacity:0.9; transform:translateY(-1px); box-shadow: 0 4px 16px rgba(0,212,255,0.3); }
     .btn-success   { background: var(--green-dim); color:#fff; }
     .btn-danger    { background: var(--red-dim);   color:#fff; }
     .btn-outline   { background: transparent; border:1px solid var(--border-light); color:var(--text-secondary); }
-    .btn-outline:hover { border-color:var(--accent); color:var(--accent); }
+    .btn-outline:hover { border-color:var(--accent); color:var(--accent); background: var(--accent-glow); }
     .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
 
     /* ── Badges ── */
@@ -197,6 +313,7 @@
       font-weight  : 600;
       font-family  : var(--font-mono);
     }
+
     .badge-red    { background:rgba(255,82,82,0.15);  color:var(--red);   border:1px solid rgba(255,82,82,0.3); }
     .badge-green  { background:rgba(0,230,118,0.15);  color:var(--green); border:1px solid rgba(0,230,118,0.3); }
     .badge-amber  { background:rgba(255,171,64,0.15); color:var(--amber); border:1px solid rgba(255,171,64,0.3); }
@@ -204,6 +321,7 @@
 
     /* ── Forms ── */
     .form-group { margin-bottom: 1.25rem; }
+
     .form-label {
       display    : block;
       font-size  : 0.8rem;
@@ -213,6 +331,7 @@
       text-transform: uppercase;
       letter-spacing: 0.06em;
     }
+
     .form-control, .form-select {
       width        : 100%;
       background   : var(--bg-surface);
@@ -222,14 +341,21 @@
       padding      : 10px 14px;
       font-family  : var(--font-main);
       font-size    : 0.9rem;
-      transition   : border-color 0.2s;
+      transition   : border-color 0.2s, background-color 0.25s ease, color 0.25s ease;
       outline      : none;
     }
+
     .form-control:focus, .form-select:focus {
       border-color: var(--accent);
       box-shadow  : 0 0 0 3px var(--accent-glow);
     }
+
     .form-hint { font-size:0.75rem; color:var(--text-muted); margin-top:4px; }
+
+    .form-select option {
+      background: var(--bg-card);
+      color: var(--text-primary);
+    }
 
     /* ── Alerts ── */
     .alert {
@@ -241,12 +367,14 @@
       align-items  : center;
       gap          : 8px;
     }
+
     .alert-error   { background:rgba(255,82,82,0.1);  border:1px solid rgba(255,82,82,0.3);  color:var(--red); }
     .alert-success { background:rgba(0,230,118,0.1);  border:1px solid rgba(0,230,118,0.3);  color:var(--green); }
 
     /* ── Table ── */
     .table-wrap { overflow-x:auto; }
     table { width:100%; border-collapse:collapse; font-size:0.875rem; }
+
     th {
       background  : var(--bg-surface);
       color       : var(--text-muted);
@@ -258,8 +386,9 @@
       text-align  : left;
       border-bottom: 1px solid var(--border);
     }
+
     td { padding:12px 14px; border-bottom:1px solid var(--border); color:var(--text-primary); }
-    tr:hover td { background: var(--bg-elevated); }
+    tr:hover td { background: var(--table-hover); }
 
     /* ── Section header ── */
     .page-header {
@@ -270,6 +399,7 @@
       padding-bottom: 1rem;
       border-bottom: 1px solid var(--border);
     }
+
     .page-title { font-size:1.6rem; font-weight:700; letter-spacing:-0.02em; }
     .page-title span { color:var(--accent); }
     .page-subtitle { font-size:0.875rem; color:var(--text-muted); margin-top:4px; }
@@ -289,47 +419,70 @@
       padding     : 1.25rem;
       font-size   : 0.8rem;
       color       : var(--text-muted);
+      transition  : background-color 0.25s ease, border-color 0.25s ease;
     }
 
     /* ── Scrollbar ── */
     ::-webkit-scrollbar { width:6px; height:6px; }
-    ::-webkit-scrollbar-track { background:var(--bg-base); }
-    ::-webkit-scrollbar-thumb { background:var(--border-light); border-radius:3px; }
+    ::-webkit-scrollbar-track { background:var(--scrollbar-bg); }
+    ::-webkit-scrollbar-thumb { background:var(--scrollbar-thumb); border-radius:3px; }
 
     /* ── Animations ── */
     .fade-in { animation: fadeIn 0.4s ease; }
     @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
 
     @media(max-width:768px) {
+      .navbar { padding: 0 1rem; }
       .nav-links { display:none; }
       .grid-2,.grid-3,.grid-4 { grid-template-columns:1fr; }
       .main-content { padding:1rem; }
+      .page-header { align-items:flex-start; gap:1rem; flex-direction:column; }
     }
+
   </style>
+
   {% block extra_css %}{% endblock %}
+
 </head>
 <body>
 
 <nav class="navbar">
+
   <a class="navbar-brand" href="{{ url_for('main.index') }}">
     <div class="brand-icon"><i class="fas fa-heartbeat"></i></div>
-    <span class="brand-name">Liver<span>AI</span></span>
+    <span class="brand-name">Hepato<span>Sense</span></span>
   </a>
+
   <ul class="nav-links">
+
     <li><a href="{{ url_for('main.index') }}"      class="{{ 'active' if request.endpoint == 'main.index' }}">
       <i class="fas fa-house"></i> Home</a></li>
+
     <li><a href="{{ url_for('dashboard.index') }}" class="{{ 'active' if request.blueprint == 'dashboard' }}">
       <i class="fas fa-chart-line"></i> Dashboard</a></li>
+
     <li><a href="{{ url_for('history.index') }}"   class="{{ 'active' if request.blueprint == 'history' }}">
       <i class="fas fa-clock-rotate-left"></i> History</a></li>
+
     <li><a href="{{ url_for('about.index') }}"     class="{{ 'active' if request.blueprint == 'about' }}">
       <i class="fas fa-circle-info"></i> About</a></li>
+
+    <li>
+      <button type="button" class="theme-toggle" id="themeToggle"
+              aria-label="Toggle light and dark mode" title="Toggle theme">
+        <i class="fas fa-moon" id="themeIcon"></i>
+      </button>
+    </li>
+
     <li><a href="{{ url_for('predict.form') }}"    class="nav-cta">
-      <i class="fas fa-flask"></i> New Prediction</a></li>
+      <i class="fas fa-flask"></i> New Detection</a></li>
+
   </ul>
+
 </nav>
 
 <main class="main-content fade-in">
+
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% for cat, msg in messages %}
       <div class="alert alert-{{ 'error' if cat == 'error' else 'success' }}">
@@ -339,13 +492,78 @@
   {% endwith %}
 
   {% block content %}{% endblock %}
+
 </main>
 
 <footer>
-  <p>LiverAI &mdash; Explainable Ensemble ML System for Liver Disease Prediction &nbsp;|&nbsp;
+  <p>HepatoSense &mdash; Explainable Ensemble ML System for Liver Disease Detection &nbsp;|&nbsp;
      Built with Flask &middot; SHAP &middot; scikit-learn &middot; XGBoost</p>
 </footer>
 
+<script>
+  (function () {
+
+    var THEME_KEY = 'HepatoSense-theme';
+
+    function applyTheme(theme) {
+      var html = document.documentElement;
+      var icon = document.getElementById('themeIcon');
+      var btn  = document.getElementById('themeToggle');
+
+      html.setAttribute('data-theme', theme);
+
+      if (theme === 'light') {
+        if (icon) icon.className = 'fas fa-sun';
+        if (btn)  btn.setAttribute('title', 'Switch to dark mode');
+      } else {
+        if (icon) icon.className = 'fas fa-moon';
+        if (btn)  btn.setAttribute('title', 'Switch to light mode');
+      }
+
+      window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: theme } }));
+    }
+
+    // Sync icon with the theme already applied by the anti-flash script in <head>
+    var saved = localStorage.getItem(THEME_KEY) || 'dark';
+    applyTheme(saved);
+
+    document.addEventListener('DOMContentLoaded', function () {
+      var toggle = document.getElementById('themeToggle');
+      if (!toggle) return;
+
+      toggle.addEventListener('click', function () {
+        var current = document.documentElement.getAttribute('data-theme') || 'dark';
+        var next = current === 'dark' ? 'light' : 'dark';
+        localStorage.setItem(THEME_KEY, next);
+        applyTheme(next);
+      });
+    });
+
+    // Helper other pages (e.g. Dashboard Chart.js) can call to read live theme colors
+    window.getThemeColors = function () {
+      var s = getComputedStyle(document.documentElement);
+      return {
+        background : s.getPropertyValue('--bg-base').trim(),
+        surface    : s.getPropertyValue('--bg-surface').trim(),
+        card       : s.getPropertyValue('--bg-card').trim(),
+        elevated   : s.getPropertyValue('--bg-elevated').trim(),
+        border     : s.getPropertyValue('--border').trim(),
+        borderLight: s.getPropertyValue('--border-light').trim(),
+        accent     : s.getPropertyValue('--accent').trim(),
+        green      : s.getPropertyValue('--green').trim(),
+        red        : s.getPropertyValue('--red').trim(),
+        amber      : s.getPropertyValue('--amber').trim(),
+        primaryText  : s.getPropertyValue('--text-primary').trim(),
+        secondaryText: s.getPropertyValue('--text-secondary').trim(),
+        mutedText    : s.getPropertyValue('--text-muted').trim(),
+        grid       : s.getPropertyValue('--border').trim()
+      };
+    };
+
+  })();
+</script>
+
 {% block extra_js %}{% endblock %}
+
 </body>
 </html>

@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}LiverAI — Dashboard{% endblock %}
+{% block title %}HepatoSense — Dashboard{% endblock %}
 
 {% block content %}
 <div class="page-header">
   <div>
     <div class="page-title"><span>Analytics</span> Dashboard</div>
-    <div class="page-subtitle">System-wide statistics and prediction trends</div>
+    <div class="page-subtitle">System-wide statistics and detection trends</div>
   </div>
   <div style="display:flex; gap:0.75rem;">
     <button onclick="refreshStats()" class="btn btn-outline btn-sm">
@@ -23,7 +23,7 @@
     <div class="stat-icon blue"><i class="fas fa-database"></i></div>
     <div>
       <div class="stat-value" id="s-total">{{ stats.total }}</div>
-      <div class="stat-label">Total Predictions</div>
+      <div class="stat-label">Total Detections</div>
     </div>
   </div>
   <div class="stat-card">
@@ -53,7 +53,7 @@
 
   <!-- Daily trend chart -->
   <div class="card">
-    <div class="card-title"><i class="fas fa-chart-line"></i> 14-Day Prediction Trend</div>
+    <div class="card-title"><i class="fas fa-chart-line"></i> 14-Day Detection Trend</div>
     <canvas id="trendChart" height="100"></canvas>
   </div>
 
@@ -113,7 +113,7 @@
 <!-- ── Recent predictions table ─────────────────────────────── -->
 <div class="card">
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-    <div class="card-title" style="margin:0;"><i class="fas fa-table"></i> Recent 10 Predictions</div>
+    <div class="card-title" style="margin:0;"><i class="fas fa-table"></i> Recent 10 Detections</div>
     <a href="{{ url_for('history.index') }}" class="btn btn-outline btn-sm">View All</a>
   </div>
   <div class="table-wrap">
@@ -121,7 +121,7 @@
       <thead>
         <tr>
           <th>#</th><th>Patient</th><th>Age</th><th>Gender</th>
-          <th>Prediction</th><th>Confidence</th><th>Date</th><th>Action</th>
+          <th>Detection</th><th>Confidence</th><th>Date</th><th>Action</th>
         </tr>
       </thead>
       <tbody>

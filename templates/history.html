@@ -1,18 +1,18 @@
 {% extends "base.html" %}
-{% block title %}LiverAI — Patient History{% endblock %}
+{% block title %}HepatoSense Patient History{% endblock %}
 
 {% block content %}
 <div class="page-header">
   <div>
     <div class="page-title">Patient <span>History</span></div>
-    <div class="page-subtitle">Search, filter and review all prediction records</div>
+    <div class="page-subtitle">Search, filter and review all detection records</div>
   </div>
   <div style="display:flex; gap:0.75rem;">
     <a href="{{ url_for('history.export') }}" class="btn btn-outline btn-sm">
       <i class="fas fa-download"></i> Export CSV
     </a>
     <a href="{{ url_for('predict.form') }}" class="btn btn-primary btn-sm">
-      <i class="fas fa-plus"></i> New Prediction
+      <i class="fas fa-plus"></i> New Detection
     </a>
   </div>
 </div>
@@ -29,7 +29,7 @@
       </div>
 
       <div style="flex:1; min-width:140px;">
-        <label class="form-label">Prediction</label>
+        <label class="form-label">Detection</label>
         <select name="prediction" class="form-select">
           <option value="">All</option>
           <option value="Liver Disease"    {{ 'selected' if pred_filter == 'Liver Disease' }}>Liver Disease</option>
@@ -94,7 +94,7 @@
           <th>Age</th>
           <th>Gender</th>
           <th>Key Labs</th>
-          <th>Prediction</th>
+          <th>Detection</th>
           <th>Confidence</th>
           <th>Confidence</th>
           <th>Date</th>
